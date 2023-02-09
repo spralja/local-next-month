@@ -10,15 +10,13 @@ from spotipy.oauth2 import SpotifyClientCredentials
 
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
-def create_url(id:int, country:str, city:str, start_date:date, end_date:date, page:int):
+def create_url(id:int, start_date:date, end_date:date, page:int):
     """
     This function createas a 'songkick' url for scraping artists in a certian time frame in a certain area
     """
-    URL_TEMPLATE = Template('https://www.songkick.com/metro-areas/$id-$country-$city?utf8=%E2%9C%93&filters%5BminDate%5D=$start_month%2F$start_day%2F$start_year&filters%5BmaxDate%5D=$end_month%2F$end_day%2F$end_year&page=$page#metro-area-calendar')
+    URL_TEMPLATE = Template('https://www.songkick.com/metro-areas/$id?utf8=%E2%9C%93&filters%5BminDate%5D=$start_month%2F$start_day%2F$start_year&filters%5BmaxDate%5D=$end_month%2F$end_day%2F$end_year&page=$page#metro-area-calendar')
     return URL_TEMPLATE.substitute(
-        id=str(id), 
-        country=country, 
-        city=city,
+        id=str(id),
         start_day=start_date.day,
         start_month=start_date.month,
         start_year=start_date.year,
@@ -39,24 +37,24 @@ def is_last_page(response:requests.models.Response):
             return True
 
 
-def get_metro_area_pages(id:int, country:str, city:str, start_date:date, end_date:date):
+def get_metro_area_pages(id:int, start_date:date, end_date:date):
     """
     Get all pages available for the time frame and city, max of 30
     """
     pages = []
     for i in range(1, 31):
-        response = requests.get(create_url(id=id, country=country, city=city, start_date=start_date, end_date=end_date, page=i))
+        response = requests.get(create_url(id=id, start_date=start_date, end_date=end_date, page=i))
         if is_last_page(response): break
             
         pages.append(response.text)
         
     return pages
 
-def get_metro_area_concerts(id:int, country:str, city:str, start_date:date, end_date:date):
+def get_metro_area_concerts(id:int, start_date:date, end_date:date):
     """
     Get an list of concert names from songkick for the given time frame and given area
     """
-    pages = get_metro_area_pages(id=id, country=country, city=city, start_date=start_date, end_date=end_date)
+    pages = get_metro_area_pages(id=id, start_date=start_date, end_date=end_date)
     concerts = []
     for page in pages:
         strongs = BeautifulSoup(page).find_all('strong')
@@ -104,11 +102,9 @@ def get_authorization_url(redirect_uri:str, scopes:List[str]):
     return url
 
 
-def main(id:str, country:str, city:str, start_year:str, start_month:str, start_day:str, end_year:str, end_month:str, end_day:str):
+def main(id:str, start_year:str, start_month:str, start_day:str, end_year:str, end_month:str, end_day:str):
     concerts = get_metro_area_concerts(
         id=int(id), 
-        country=country, 
-        city=city, 
         start_date=date(int(start_year), int(start_month), int(start_day)),
         end_date=date(int(end_year), int(end_month), int(end_day)),
     )
