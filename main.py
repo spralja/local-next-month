@@ -134,6 +134,7 @@ def main(id:str, start_year:str, start_month:str, start_day:str, end_year:str, e
     spotify.user_playlist_add_tracks(user=user, playlist_id=playlist['id'], tracks=tracks[:100])
     spotify.user_playlist_add_tracks(user=user, playlist_id=playlist['id'], tracks=tracks[100:])
 
+
 if __name__ == '__main__':
     main(*sys.argv[1:])
 
