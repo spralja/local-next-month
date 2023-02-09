@@ -1,6 +1,6 @@
 from string import Template
 from datetime import date
-from typing import List
+from typing import List, Iterable
 import sys
 
 from bs4 import BeautifulSoup
@@ -102,18 +102,50 @@ def get_authorization_url(redirect_uri:str, scopes:List[str]):
     return url
 
 
-def main(id:str, start_year:str, start_month:str, start_day:str, end_year:str, end_month:str, end_day:str):
-    concerts = get_metro_area_concerts(
-        id=int(id), 
-        start_date=date(int(start_year), int(start_month), int(start_day)),
-        end_date=date(int(end_year), int(end_month), int(end_day)),
-    )
+def split_list_by_n(array: List, n: int):
+    """
+    Splits a list into some segments where each segment is n long, and then the last segmet is the remainder
+    """
+    split = []
+    i = 0
+    j = n
+    while i <= len(array):
+        split.append(array[i:min(len(array), j)])
+        i += n
+        j += n
+
+    return split
+
+
+def create_playlist(ids: Iterable[str], user: str, start_date: date, end_date: date, playlist_name: str, playlist_description: str):
+    """
+    creates a playlist using the give metro-area ids for the given user, between the given time frame, with the given name and description
+    """
+    playlist = spotify.user_playlist_create(user=user, name=playlist_name, public=False, description=playlist_description)
+    concerts = []
+    for id in ids:
+        concerts += get_metro_area_concerts(id=id, start_date=start_date, end_date=end_date)
 
     artists = get_spotify_artist_uri(concerts)
     tracks = get_top_track_from_artists(artists)
+
+    for tracks100 in split_list_by_n(tracks, 100):
+        spotify.user_playlist_add_tracks(user=user, playlist_id=playlist['id'], tracks=tracks100)
+
+
+
+def main(start_year: str, start_month: str, start_day: str, end_year: str, end_month: str, end_day: str, *ids: List[str]):
+    start_date = date(int(start_year), int(start_month), int(start_day))
+    end_date = date(int(end_year), int(end_month), int(end_day))
+
     auth_url = get_authorization_url('https://open.spotify.com/', ['playlist-modify-private'])
-    print(auth_url)
+
+    print()
+    print('link:', auth_url)
+    print()
+
     code = input('code: ')
+    user = input('user: ')
 
     response = requests.post(
     'https://accounts.spotify.com/api/token', 
@@ -127,12 +159,14 @@ def main(id:str, start_year:str, start_month:str, start_day:str, end_year:str, e
     })
 
     access_token = response.json()['access_token']
-    spotify = spotipy.Spotify(auth=access_token, client_credentials_manager=SpotifyClientCredentials())
-    user = input('user: ')
-    playlist = spotify.user_playlist_create(user=user, name='Local Next Month: March', public=False, description='Tracks from artists playing in your area in March')
 
-    spotify.user_playlist_add_tracks(user=user, playlist_id=playlist['id'], tracks=tracks[:100])
-    spotify.user_playlist_add_tracks(user=user, playlist_id=playlist['id'], tracks=tracks[100:])
+    #Singleton
+    global spotify 
+    spotify = spotipy.Spotify(auth=access_token, client_credentials_manager=SpotifyClientCredentials())
+    
+    create_playlist(ids, user, start_date, end_date, 'March', 'test1704')
+
+    print('success')
 
 
 if __name__ == '__main__':
