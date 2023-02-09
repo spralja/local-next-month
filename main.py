@@ -1,5 +1,6 @@
 from string import Template
-from datetime import date
+from datetime import date, timedelta
+import calendar
 from typing import List, Iterable
 import sys
 
@@ -117,11 +118,12 @@ def split_list_by_n(array: List, n: int):
     return split
 
 
-def create_playlist(ids: Iterable[str], user: str, start_date: date, end_date: date, playlist_name: str, playlist_description: str):
+def create_playlist(ids: Iterable[str], user: str, start_date: date, end_date: date, name: str, description: str):
     """
     creates a playlist using the give metro-area ids for the given user, between the given time frame, with the given name and description
     """
-    playlist = spotify.user_playlist_create(user=user, name=playlist_name, public=False, description=playlist_description)
+    playlist = spotify.user_playlist_create(user=user, name=name, public=False, description=description)
+
     concerts = []
     for id in ids:
         concerts += get_metro_area_concerts(id=id, start_date=start_date, end_date=end_date)
@@ -134,9 +136,9 @@ def create_playlist(ids: Iterable[str], user: str, start_date: date, end_date: d
 
 
 
-def main(start_year: str, start_month: str, start_day: str, end_year: str, end_month: str, end_day: str, *ids: List[str]):
-    start_date = date(int(start_year), int(start_month), int(start_day))
-    end_date = date(int(end_year), int(end_month), int(end_day))
+def main(year: str, month: str, *ids: List[str]):
+    start_date = date(int(year), int(month), 1)
+    end_date = date(int(year), int(month), calendar.monthrange(int(year), int(month))[1])
 
     auth_url = get_authorization_url('https://open.spotify.com/', ['playlist-modify-private'])
 
@@ -164,7 +166,9 @@ def main(start_year: str, start_month: str, start_day: str, end_year: str, end_m
     global spotify 
     spotify = spotipy.Spotify(auth=access_token, client_credentials_manager=SpotifyClientCredentials())
     
-    create_playlist(ids, user, start_date, end_date, 'March', 'test1704')
+    playlist_name = f'Local Next Month: {calendar.month_name[int(month)]}'
+    playlist_description = f'A playlist with tracks from artists playing in your local area in {calendar.month_name[int(month)]} {year}.\n Created by local-next-month https://github.com/spralja/local-next-month/'
+    create_playlist(ids=ids, user=user, start_date=start_date, end_date=end_date, name=playlist_name, description=playlist_description)
 
     print('success')
 
