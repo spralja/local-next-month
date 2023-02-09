@@ -11,6 +11,9 @@ from spotipy.oauth2 import SpotifyClientCredentials
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
 
 def create_url(id:int, country:str, city:str, start_date:date, end_date:date, page:int):
+    """
+    This function createas a 'songkick' url for scraping artists in a certian time frame in a certain area
+    """
     URL_TEMPLATE = Template('https://www.songkick.com/metro-areas/$id-$country-$city?utf8=%E2%9C%93&filters%5BminDate%5D=$start_month%2F$start_day%2F$start_year&filters%5BmaxDate%5D=$end_month%2F$end_day%2F$end_year&page=$page#metro-area-calendar')
     return URL_TEMPLATE.substitute(
         id=str(id), 
@@ -28,12 +31,18 @@ def create_url(id:int, country:str, city:str, start_date:date, end_date:date, pa
 
 
 def is_last_page(response:requests.models.Response):
+    """
+    This function checks whether the page is out of bounds
+    """
     for tag in BeautifulSoup(response.text).find_all('p'):
         if tag.getText().find('Your search returned no results') != -1:
             return True
 
 
 def get_metro_area_pages(id:int, country:str, city:str, start_date:date, end_date:date):
+    """
+    Get all pages available for the time frame and city, max of 30
+    """
     pages = []
     for i in range(1, 31):
         response = requests.get(create_url(id=id, country=country, city=city, start_date=start_date, end_date=end_date, page=i))
@@ -44,6 +53,9 @@ def get_metro_area_pages(id:int, country:str, city:str, start_date:date, end_dat
     return pages
 
 def get_metro_area_concerts(id:int, country:str, city:str, start_date:date, end_date:date):
+    """
+    Get an list of concert names from songkick for the given time frame and given area
+    """
     pages = get_metro_area_pages(id=id, country=country, city=city, start_date=start_date, end_date=end_date)
     concerts = []
     for page in pages:
@@ -55,6 +67,10 @@ def get_metro_area_concerts(id:int, country:str, city:str, start_date:date, end_
         
 
 def get_spotify_artist_uri(concerts:List[str]):
+    """
+    Takes a list of concert names and matches them to the spotify api using the search service, only exact matches are accepted
+    returns the list artists (uri only)
+    """
     spotify_artist_uris = []
     for concert in concerts:
         request = spotify.search(concert, type='artist', limit=1)
@@ -67,6 +83,9 @@ def get_spotify_artist_uri(concerts:List[str]):
 
 
 def get_top_track_from_artists(artists:List[str]):
+    """
+    Takes a list of artist uris and returns a list that includes each artists top song (uri only)
+    """
     tracks = []
     for artist in artists:
         top_track = spotify.artist_top_tracks(artist)['tracks'][0]['uri']
@@ -76,6 +95,9 @@ def get_top_track_from_artists(artists:List[str]):
 
 
 def get_authorization_url(redirect_uri:str, scopes:List[str]):
+    """
+    Creates the authorisation url for the user
+    """
     client_id=SpotifyClientCredentials().client_id
     URL_TEMPLATE = Template('https://accounts.spotify.com/authorize?client_id=$client_id&response_type=code&redirect_uri=$redirect_uri&scope=$scopes')
     url = URL_TEMPLATE.substitute(client_id=client_id, redirect_uri=redirect_uri, scopes='%20'.join(scopes))
