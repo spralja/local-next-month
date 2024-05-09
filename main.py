@@ -43,17 +43,38 @@ class clientCAPI:
             if tag.getText().find('Your search returned no results') != -1:
                 return True
     
+    def _get_metro_area_page(self, metro_id: int, start_date: date, end_date: date, index: int):
+        url = self._create_url(metro_id, start_date, end_date, index)
+
+        with shelve.open('database') as db:
+            if url in db:
+                page = db[url]
+
+                return page
+
+        print(self._create_url(metro_id, start_date, end_date, index))
+
+        response = requests.get(url)
+
+        page = None
+
+        if not self._is_last_page(response): page = response.text
+
+        with shelve.open('database') as db:
+            db[url] = page
+
+        return page
+
     def _get_metro_area_pages(self, metro_id: int, start_date: date, end_date: date):
         """
         Get all pages available for the time frame and city, max of 30
         """
         pages = []
         for i in range(1, 31):
-            print(self._create_url(metro_id, start_date, end_date, i))
-            response = requests.get(self._create_url(metro_id, start_date, end_date, i))
-            if self._is_last_page(response): break
+            page = self._get_metro_area_page(metro_id, start_date, end_date, i)
+            if not page: break
                 
-            pages.append(response.text)
+            pages.append(page)
             
         return pages
     
@@ -61,15 +82,6 @@ class clientCAPI:
         """
         Get a list of concert names for the given (month, year) and given area
         """
-        key = f'{metro_id}-{year}-{month}'
-        with shelve.open('database') as db:
-            if key in db:
-                concerts = db[key]
-
-                random.shuffle(concerts)
-
-                return concerts
-        
         start_date = date(year, month, 1)
         end_date = date(year, month, calendar.monthrange(year, month)[1])
         pages = self._get_metro_area_pages(metro_id, start_date, end_date)
@@ -81,9 +93,6 @@ class clientCAPI:
         
         random.shuffle(concerts)
 
-        with shelve.open('database') as db:
-            db[key] = concerts
-        
         return concerts
 
 
@@ -97,7 +106,8 @@ def get_spotify_artist_uri(concerts:List[str]):
         request = spotify.search(concert, type='artist', limit=50)
         if not request['artists']['items']: continue
         [artist, *_] = request['artists']['items']
-        if artist['name'] == concert:
+        
+        if artist['name'].lower() == concert.lower():
             spotify_artist_uris.append(artist['uri'])
             
     return spotify_artist_uris
