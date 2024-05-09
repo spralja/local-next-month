@@ -66,11 +66,9 @@ class clientCAPI:
 
         print(self._create_url(metro_id, start_date, end_date, index))
 
-        response = self._request(url)
+        page = self._request(url)
 
-        page = None
-
-        if not self._is_last_page(response): page = response
+        if self._is_last_page(page): page = None
 
         with shelve.open('database') as db:
             db[url] = page
