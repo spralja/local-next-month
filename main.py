@@ -58,20 +58,11 @@ class clientCAPI:
     def _get_metro_area_page(self, metro_id: int, start_date: date, end_date: date, index: int):
         url = self._create_url(metro_id, start_date, end_date, index)
 
-        with shelve.open('database') as db:
-            if url in db:
-                page = db[url]
-
-                return page
-
         print(self._create_url(metro_id, start_date, end_date, index))
 
         page = self._request(url)
 
         if self._is_last_page(page): page = None
-
-        with shelve.open('database') as db:
-            db[url] = page
 
         return page
 
