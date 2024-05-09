@@ -35,11 +35,11 @@ class clientCAPI:
         )
     
     @staticmethod
-    def _is_last_page(response: requests.models.Response):
+    def _is_last_page(page: str):
         """
         This function checks whether the page is out of bounds
         """
-        for tag in BeautifulSoup(response.text, features="html.parser").find_all('p'):
+        for tag in BeautifulSoup(response, features="html.parser").find_all('p'):
             if tag.getText().find('Your search returned no results') != -1:
                 return True
     
@@ -58,7 +58,7 @@ class clientCAPI:
 
         page = None
 
-        if not self._is_last_page(response): page = response.text
+        if not self._is_last_page(response.text): page = response.text
 
         with shelve.open('database') as db:
             db[url] = page
@@ -89,7 +89,9 @@ class clientCAPI:
         for page in pages:
             strongs = BeautifulSoup(page, features="html.parser").find_all('strong')
             for strong in strongs:
-                concerts.append(str(strong.string))
+                concert = str(strong.string)
+
+                concerts.append(concert)
         
         random.shuffle(concerts)
 
@@ -170,7 +172,7 @@ def create_playlist(ids: Iterable[str], user: str, year: int, month: int, name: 
     for metro_id in ids:
         concerts += capi.get_metro_area_concerts(metro_id, year, month)
 
-    artists = get_spotify_artist_uri(concerts)
+    artists = get_spotify_artist_uris(concerts)
     tracks = get_top_track_from_artists(artists)
 
     for tracks100 in split_list_by_n(tracks, 100):
