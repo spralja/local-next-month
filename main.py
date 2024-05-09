@@ -21,9 +21,8 @@ class clientCAPI:
         """
         This function constructs the url endpoint which returns artists in a certian time frame in a certain area
         """
-        URL_TEMPLATE = Template('${base_url}/metro-areas/$metro_id?utf8=%E2%9C%93&filters%5BminDate%5D=$start_month%2F$start_day%2F$start_year&filters%5BmaxDate%5D=$end_month%2F$end_day%2F$end_year&page=$page#metro-area-calendar')
+        URL_TEMPLATE = Template('metro-areas/$metro_id?utf8=%E2%9C%93&filters%5BminDate%5D=$start_month%2F$start_day%2F$start_year&filters%5BmaxDate%5D=$end_month%2F$end_day%2F$end_year&page=$page#metro-area-calendar')
         return URL_TEMPLATE.substitute(
-            base_url=self.base_url,
             metro_id=str(metro_id),
             start_day=start_date.day,
             start_month=start_date.month,
@@ -43,6 +42,19 @@ class clientCAPI:
             if tag.getText().find('Your search returned no results') != -1:
                 return True
     
+    def _request(self, url: str):
+        with shelve.open('database') as db:
+            if url in db:
+                page = db[url]
+
+                return page
+
+        response = requests.get(f"{self.base_url}/{url}")
+
+        page = response.text
+
+        return page
+
     def _get_metro_area_page(self, metro_id: int, start_date: date, end_date: date, index: int):
         url = self._create_url(metro_id, start_date, end_date, index)
 
@@ -54,11 +66,11 @@ class clientCAPI:
 
         print(self._create_url(metro_id, start_date, end_date, index))
 
-        response = requests.get(url)
+        response = self._request(url)
 
         page = None
 
-        if not self._is_last_page(response.text): page = response.text
+        if not self._is_last_page(response): page = response
 
         with shelve.open('database') as db:
             db[url] = page
