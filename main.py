@@ -96,19 +96,26 @@ class clientCAPI:
         return concerts
 
 
-def get_spotify_artist_uri(concerts:List[str]):
+def get_spotify_artist_uri(concert: str):
+    request = spotify.search(concert, type='artist', limit=50)
+
+    if request['artists']['items']:
+        artist, *_ = request['artists']['items']
+
+        if artist['name'].lower() == concert.lower():
+            return artist['uri']
+
+
+def get_spotify_artist_uris(concerts:List[str]):
     """
     Takes a list of concert names and matches them to the spotify api using the search service, only exact matches are accepted
     returns the list artists (uri only)
     """
     spotify_artist_uris = []
     for concert in concerts:
-        request = spotify.search(concert, type='artist', limit=50)
-        if not request['artists']['items']: continue
-        [artist, *_] = request['artists']['items']
-        
-        if artist['name'].lower() == concert.lower():
-            spotify_artist_uris.append(artist['uri'])
+        uri = get_spotify_artist_uri(concert)
+
+        if uri: spotify_artist_uris.append(uri)
             
     return spotify_artist_uris
 
