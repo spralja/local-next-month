@@ -92,7 +92,20 @@ class clientCAPI:
             for strong in strongs:
                 concert = str(strong.string)
 
-                concerts.append(concert)
+                if not get_spotify_artist_uri(concert):
+                    url = strong.parent.parent.parent.parent.parent.find('a', class_='thumb').get('href')
+                    
+                    page = self._request(url)
+
+                    lineup_element = BeautifulSoup(page, features='html.parser').find(id='lineup')
+                    if lineup_element:
+                        for artist_element in lineup_element.find_all('a'):
+                            concert = str(artist_element.string)
+
+                            concerts.append(concert)
+
+                else: 
+                    concerts.append(concert)
         
         random.shuffle(concerts)
 
