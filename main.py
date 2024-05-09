@@ -133,7 +133,7 @@ def get_spotify_artist_uris(concerts:List[str]):
 
         if uri: spotify_artist_uris.append(uri)
             
-    return spotify_artist_uris
+    return list(set(spotify_artist_uris))
 
 
 def get_top_track_from_artists(artists:List[str]):
