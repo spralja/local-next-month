@@ -69,17 +69,15 @@ class clientCAPI:
                 random.shuffle(concerts)
 
                 return concerts
-            else: 
-                db[key] = []
         
         start_date = date(year, month, 1)
         end_date = date(year, month, calendar.monthrange(year, month)[1])
         pages = self._get_metro_area_pages(metro_id, start_date, end_date)
         concerts = []
         for page in pages:
-            strongs = BeautifulSoup(page).find_all('strong')
+            strongs = BeautifulSoup(page, features="html.parser").find_all('strong')
             for strong in strongs:
-                concerts.append(strong.string)
+                concerts.append(str(strong.string))
         
         random.shuffle(concerts)
 
@@ -96,9 +94,9 @@ def get_spotify_artist_uri(concerts:List[str]):
     """
     spotify_artist_uris = []
     for concert in concerts:
-        request = spotify.search(concert, type='artist', limit=1)
+        request = spotify.search(concert, type='artist', limit=50)
         if not request['artists']['items']: continue
-        [artist] = request['artists']['items']
+        [artist, *_] = request['artists']['items']
         if artist['name'] == concert:
             spotify_artist_uris.append(artist['uri'])
             
@@ -173,8 +171,6 @@ logging.getLogger("urllib3").setLevel(logging.DEBUG)
 """
 
 def main(year: str, month: str, *ids: List[str]):
-    start_date = date(int(year), int(month), 1)
-    end_date = date(int(year), int(month), calendar.monthrange(int(year), int(month))[1])
 
     auth_url = get_authorization_url('https://open.spotify.com/', ['playlist-modify-private'])
 
@@ -192,7 +188,6 @@ def main(year: str, month: str, *ids: List[str]):
         'redirect_uri':'https://open.spotify.com/',
         'client_id':SpotifyClientCredentials().client_id,
         'client_secret':SpotifyClientCredentials().client_secret,
-    
     })
 
     access_token = response.json()['access_token']
@@ -213,4 +208,3 @@ def main(year: str, month: str, *ids: List[str]):
 
 if __name__ == '__main__':
     main(*sys.argv[1:])
-
