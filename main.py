@@ -180,7 +180,6 @@ def main(year: str, month: str, *ids: List[str]):
     print()
 
     code = input('code: ')
-    user = input('user: ')
 
     response = requests.post(
     'https://accounts.spotify.com/api/token', 
@@ -199,9 +198,12 @@ def main(year: str, month: str, *ids: List[str]):
     global spotify 
     spotify = spotipy.Spotify(auth=access_token, client_credentials_manager=SpotifyClientCredentials(), status_forcelist=[], retries=0, status_retries=0)
     
+    user_id = spotify.me()['id']
+
     playlist_name = f'Local Next Month: {calendar.month_name[int(month)]}'
     playlist_description = f'A playlist with tracks from artists playing in your local area in {calendar.month_name[int(month)]} {year}. Created by local-next-month https://github.com/spralja/local-next-month/'
-    create_playlist(ids, user, int(year), int(month), name=playlist_name, description=playlist_description)
+
+    create_playlist(ids, user_id, int(year), int(month), name=playlist_name, description=playlist_description)
 
     print('success')
 
