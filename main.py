@@ -39,7 +39,7 @@ class clientCAPI:
         """
         This function checks whether the page is out of bounds
         """
-        for tag in BeautifulSoup(response.text).find_all('p'):
+        for tag in BeautifulSoup(response.text, features="html.parser").find_all('p'):
             if tag.getText().find('Your search returned no results') != -1:
                 return True
     
@@ -59,14 +59,18 @@ class clientCAPI:
     
     def get_metro_area_concerts(self, metro_id: int, year: int, month: int):
         """
-        Get a list of concert names for the given time frame and given area
+        Get a list of concert names for the given (month, year) and given area
         """
         key = f'{metro_id}-{year}-{month}'
         with shelve.open('database') as db:
             if key in db:
-                print("KEY CACHED")
-                return db[key]
-            else: print("KEY NOT CACHED")
+                concerts = db[key]
+
+                random.shuffle(concerts)
+
+                return concerts
+            else: 
+                db[key] = []
         
         start_date = date(year, month, 1)
         end_date = date(year, month, calendar.monthrange(year, month)[1])
@@ -79,7 +83,7 @@ class clientCAPI:
         
         random.shuffle(concerts)
 
-        with shelve.open('database.db') as db:
+        with shelve.open('database') as db:
             db[key] = concerts
         
         return concerts
@@ -157,7 +161,7 @@ def create_playlist(ids: Iterable[str], user: str, year: int, month: int, name: 
     for tracks100 in split_list_by_n(tracks, 100):
         spotify.user_playlist_add_tracks(user=user, playlist_id=playlist['id'], tracks=tracks100)
 
-
+"""
 import logging
 import http.client
 
@@ -166,7 +170,7 @@ http.client.HTTPConnection.debuglevel = 1
 logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("requests").setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
-
+"""
 
 def main(year: str, month: str, *ids: List[str]):
     start_date = date(int(year), int(month), 1)
@@ -200,7 +204,7 @@ def main(year: str, month: str, *ids: List[str]):
     user_id = spotify.me()['id']
 
     playlist_name = f'Local Next Month: {calendar.month_name[int(month)]}'
-    playlist_description = f'A playlist with tracks from artists playing in your local area in {calendar.month_name[int(month)]} {year}. Created by local-next-month https://github.com/spralja/local-next-month/'
+    playlist_description = f'A playlist with tracks from artists playing in the local area in {calendar.month_name[int(month)]} {year}. Created by local-next-month https://github.com/spralja/local-next-month/'
 
     create_playlist(ids, user_id, int(year), int(month), name=playlist_name, description=playlist_description)
 

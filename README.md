@@ -9,3 +9,6 @@ authorize user using spotify api oatuh... -> create playlist -> add tracks to pl
 
 Example script for area around Roskilde, Denmark:
 `py main.py 2024 5 28617 53750 105376 36187 176770 98656`
+
+Example script for area around Copenhagen, Denmark:
+`py main.py 2024 5 28617 53750 59801`
