@@ -1,5 +1,5 @@
 from string import Template
-from datetime import date, timedelta
+from datetime import date
 import calendar
 from typing import List, Iterable
 import sys
@@ -13,6 +13,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
+
 
 class clientCAPI:
     def __init__(self, base_url=os.environ.get('LOCAL_NEXT_MONTH_CAPI_BASE_URL')):
@@ -60,7 +61,7 @@ class clientCAPI:
     
     def get_metro_area_concerts(self, metro_id: int, year: int, month: int):
         """
-        Get an list of concert names for the given time frame and given area
+        Get a list of concert names for the given time frame and given area
         """
         key = f'{metro_id}-{year}-{month}'
         with shelve.open('database') as db:
@@ -84,6 +85,7 @@ class clientCAPI:
             db[key] = concerts
         
         return concerts
+
 
 def get_spotify_artist_uri(concerts:List[str]):
     """
@@ -117,7 +119,7 @@ def get_authorization_url(redirect_uri:str, scopes:List[str]):
     """
     Creates the authorisation url for the user
     """
-    client_id=SpotifyClientCredentials().client_id
+    client_id = SpotifyClientCredentials().client_id
     URL_TEMPLATE = Template('https://accounts.spotify.com/authorize?client_id=$client_id&response_type=code&redirect_uri=$redirect_uri&scope=$scopes')
     url = URL_TEMPLATE.substitute(client_id=client_id, redirect_uri=redirect_uri, scopes='%20'.join(scopes))
     return url
@@ -138,8 +140,6 @@ def split_list_by_n(array: List, n: int):
     return split
 
 
-
-
 def create_playlist(ids: Iterable[str], user: str, year: int, month: int, name: str, description: str):
     """
     creates a playlist using the give metro-area ids for the given user, between the given time frame, with the given name and description
@@ -150,8 +150,8 @@ def create_playlist(ids: Iterable[str], user: str, year: int, month: int, name: 
     capi = clientCAPI()
 
     concerts = []
-    for id in ids:
-        concerts += capi.get_metro_area_concerts(id, year, month)
+    for metro_id in ids:
+        concerts += capi.get_metro_area_concerts(metro_id, year, month)
 
     artists = get_spotify_artist_uri(concerts)
     tracks = get_top_track_from_artists(artists)
@@ -168,6 +168,7 @@ http.client.HTTPConnection.debuglevel = 1
 logging.basicConfig(level=logging.DEBUG)
 logging.getLogger("requests").setLevel(logging.DEBUG)
 logging.getLogger("urllib3").setLevel(logging.DEBUG)
+
 
 def main(year: str, month: str, *ids: List[str]):
     start_date = date(int(year), int(month), 1)
@@ -194,7 +195,7 @@ def main(year: str, month: str, *ids: List[str]):
 
     access_token = response.json()['access_token']
     print(access_token)
-    #Singleton
+    # Singleton
     global spotify 
     spotify = spotipy.Spotify(auth=access_token, client_credentials_manager=SpotifyClientCredentials(), status_forcelist=[], retries=0, status_retries=0)
     
