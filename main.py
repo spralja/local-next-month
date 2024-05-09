@@ -12,8 +12,6 @@ import requests
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
-spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials())
-
 
 class clientCAPI:
     def __init__(self, base_url=os.environ.get('LOCAL_NEXT_MONTH_CAPI_BASE_URL')):
