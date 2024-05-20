@@ -13,6 +13,9 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 
 
+
+
+
 class clientCAPI:
     def __init__(self, base_url=os.environ.get('LOCAL_NEXT_MONTH_CAPI_BASE_URL')):
         self.base_url = base_url
@@ -92,6 +95,19 @@ class clientCAPI:
             for strong in strongs:
                 concert = str(strong.string)
 
+                print(concert)
+
+                if concert == 'Outdoor':
+                    print("SKIPPING OUTDOOR KEYWORD")
+                    continue
+                
+                if concert == 'Roskilde Festival 2024':
+                    print('SKIPPING RF')
+                    continue
+                if concert == 'Copenhell 2024':
+                    print("SKIPPING COPENHELL")
+                    continue
+                
                 if not get_spotify_artist_uri(concert):
                     url = strong.parent.parent.parent.parent.parent.find('a', class_='thumb').get('href')
                     
@@ -142,6 +158,10 @@ def get_top_track_from_artists(artists:List[str]):
     """
     tracks = []
     for artist in artists:
+        if not spotify.artist_top_tracks(artist)['tracks']: 
+            print(artist)
+            continue
+        
         top_track = spotify.artist_top_tracks(artist)['tracks'][0]['uri']
         tracks.append(top_track)
             
@@ -189,8 +209,13 @@ def create_playlist(ids: Iterable[str], user: str, year: int, month: int, name: 
     artists = get_spotify_artist_uris(concerts)
     tracks = get_top_track_from_artists(artists)
 
+    random.shuffle(tracks)
+
     for tracks100 in split_list_by_n(tracks, 100):
+        print(tracks100)
+        print("PROCESSING")
         spotify.user_playlist_add_tracks(user=user, playlist_id=playlist['id'], tracks=tracks100)
+        print("DONE")
 
 """
 import logging
